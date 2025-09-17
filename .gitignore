@@ -1,0 +1,21 @@
+# Build outputs
+[Bb]in/
+[Oo]bj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+
+# IDE files
+.vs/
+.vscode/
+
+# NuGet packages
+*.nupkg
+packages/
+
+# ASP.NET Core
+appsettings.*.json
+appsettings.Development.json
+
