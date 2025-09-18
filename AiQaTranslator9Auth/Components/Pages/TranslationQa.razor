@@ -1,0 +1,92 @@
+@page "/translation-qa"
+@rendermode InteractiveServer
+@inject AiQaTranslator9Auth.Services.ITranslationQaApi Api
+
+<h1>Translation Quality Check</h1>
+
+<EditForm Model="form" OnValidSubmit="OnSubmitAsync" FormName="translation-qa">
+    <DataAnnotationsValidator />
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="mb-2">
+                <label class="form-label">Source language</label>
+                <InputText class="form-control" @bind-Value="form.SourceLanguage" />
+            </div>
+            <div class="mb-2">
+                <label class="form-label">Source text</label>
+                <InputTextArea class="form-control" @bind-Value="form.SourceText" rows="10" />
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="mb-2">
+                <label class="form-label">Target language</label>
+                <InputText class="form-control" @bind-Value="form.TargetLanguage" />
+            </div>
+            <div class="mb-2">
+                <label class="form-label">Target text</label>
+                <InputTextArea class="form-control" @bind-Value="form.TargetText" rows="10" />
+            </div>
+        </div>
+    </div>
+    <div class="mt-3 d-flex gap-2 align-items-center">
+        <button class="btn btn-primary" type="submit" disabled="@isBusy">Check</button>
+        @if (isBusy)
+        {
+            <span>Working...</span>
+        }
+    </div>
+</EditForm>
+
+@if (result is not null)
+{
+    <div class="mt-4">
+        <h5>Result</h5>
+        <div class="alert @(result.IsOk ? "alert-success" : "alert-warning")">
+            <strong>@(result.IsOk ? "Looks good" : "Issues found")</strong>
+            <span class="ms-2">Errors: @result.TotalErrors</span>
+        </div>
+        <pre class="p-3 bg-light border">@result.RawAnalysis</pre>
+    </div>
+}
+
+@code {
+    private RequestModel form = new();
+    private AiQaTranslator9Auth.Services.TranslationCheckResult? result;
+    private bool isBusy;
+
+    private async Task OnSubmitAsync()
+    {
+        isBusy = true;
+        result = null;
+        try
+        {
+            result = await Api.CheckAsync(new Services.TranslationCheckRequest
+                {
+                    SourceLanguage = (form.SourceLanguage ?? "").Trim(),
+                    SourceText = (form.SourceText ?? "").Trim(),
+                    TargetLanguage = (form.TargetLanguage ?? "").Trim(),
+                    TargetText = (form.TargetText ?? "").Trim(),
+                });
+        }
+        catch (Exception ex)
+        {
+            result = new AiQaTranslator9Auth.Services.TranslationCheckResult { IsOk = false, TotalErrors = -1, RawAnalysis = ex.Message };
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private sealed class RequestModel
+    {
+        public string? SourceLanguage { get; set; } = "en";
+        public string? SourceText { get; set; }
+        public string? TargetLanguage { get; set; } = "ru";
+        public string? TargetText { get; set; }
+    }
+
+    
+}
+
+

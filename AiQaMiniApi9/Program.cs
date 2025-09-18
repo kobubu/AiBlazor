@@ -1,5 +1,6 @@
-using AiQaMiniApi9.Models;
+﻿using AiQaMiniApi9.Models;
 using AiQaMiniApi9.Services;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,7 +29,7 @@ if (app.Environment.IsDevelopment())
 app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));
 
 app.MapPost("/api/translate/check",
-    async (TranslationCheckRequest req, ITranslationChecker checker, CancellationToken ct) =>
+    async ([FromBody] TranslationCheckRequest req, ITranslationChecker checker, CancellationToken ct) => // <== [FromBody]
     {
         if (string.IsNullOrWhiteSpace(req.SourceLanguage) ||
             string.IsNullOrWhiteSpace(req.SourceText) ||
@@ -42,6 +43,7 @@ app.MapPost("/api/translate/check",
         var result = await checker.CheckAsync(req, ct);
         return Results.Ok(result);
     })
+    .DisableAntiforgery()            // JSON-API из другого сервера → антифорджери мешает
     .WithName("CheckTranslation")
     .Produces<TranslationCheckResult>(200)
     .Produces(400);

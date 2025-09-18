@@ -5,7 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using AiQaTranslator9Auth.Components;
 using AiQaTranslator9Auth.Components.Account;
 using AiQaTranslator9Auth.Data;
-using AiQaTranslator9Auth.Models; // <-- единый ApplicationUser
+using AiQaTranslator9Auth.Models; 
+using AiQaTranslator9Auth.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,12 +19,12 @@ builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
-// DbContext (один файл БД рядом с проектом)
+// DbContext (пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
 var dbPath = Path.Combine(builder.Environment.ContentRootPath, "app.db");
 builder.Services.AddDbContext<ApplicationDbContext>(o => o.UseSqlite($"Data Source={dbPath}"));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-// Identity (один раз, один тип)
+// Identity (пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ)
 builder.Services
     .AddIdentityCore<ApplicationUser>(o =>
     {
@@ -33,7 +34,7 @@ builder.Services
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
-// Authentication + cookies + Google (всё через AuthenticationBuilder)
+// Authentication + cookies + Google (пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ AuthenticationBuilder)
 var auth = builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = IdentityConstants.ApplicationScheme;
@@ -44,13 +45,22 @@ auth.AddGoogle(options =>
 {
     options.ClientId = builder.Configuration["Authentication:Google:ClientId"];
     options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
-    // options.CallbackPath = "/signin-google"; // если меняли
+    // options.CallbackPath = "/signin-google"; // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 });
 
 auth.AddIdentityCookies();
 
-// Email sender (обязательно тот же ApplicationUser)
+// Email sender (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅ ApplicationUser)
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+
+// Typed API client for AiQaMiniApi
+builder.Services.AddHttpClient<ITranslationQaApi, TranslationQaApi>((sp, http) =>
+{
+    var cfg = sp.GetRequiredService<IConfiguration>();
+    var baseUrl = cfg["Apis:AiQaMiniApi"] ?? "http://localhost:5134";
+    http.BaseAddress = new Uri(baseUrl);
+    http.Timeout = TimeSpan.FromMinutes(2);
+});
 
 var app = builder.Build();
 
@@ -68,8 +78,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-app.UseAuthentication(); // обязательно
-app.UseAuthorization();  // обязательно
+app.UseAuthentication(); // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+app.UseAuthorization();  // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 app.UseAntiforgery();
 
 app.MapStaticAssets();
