@@ -19,3 +19,8 @@ packages/
 appsettings.*.json
 appsettings.Development.json
 
+"appsettings*.json" 
+"appsettings*.json" 
+ 
+# Application settings 
+**/appsettings*.json 
