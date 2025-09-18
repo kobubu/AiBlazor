@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using AiQaTranslator9Auth.Data;
+using AiQaTranslator9Auth.Models;
 
 namespace AiQaTranslator9Auth.Components.Account;
 

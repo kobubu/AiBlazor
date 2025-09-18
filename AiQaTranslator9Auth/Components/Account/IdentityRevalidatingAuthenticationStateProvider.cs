@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using AiQaTranslator9Auth.Data;
+using AiQaTranslator9Auth.Models;
 
 namespace AiQaTranslator9Auth.Components.Account;
 

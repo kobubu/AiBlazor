@@ -9,6 +9,7 @@ using Microsoft.Extensions.Primitives;
 using AiQaTranslator9Auth.Components.Account.Pages;
 using AiQaTranslator9Auth.Components.Account.Pages.Manage;
 using AiQaTranslator9Auth.Data;
+using AiQaTranslator9Auth.Models;
 
 namespace Microsoft.AspNetCore.Routing;
 

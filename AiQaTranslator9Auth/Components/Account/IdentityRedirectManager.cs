@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Components;
+using AiQaTranslator9Auth.Models;
 
 namespace AiQaTranslator9Auth.Components.Account;
 

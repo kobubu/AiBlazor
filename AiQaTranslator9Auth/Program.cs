@@ -1,55 +1,59 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using AiQaTranslator9Auth.Components;
 using AiQaTranslator9Auth.Components.Account;
 using AiQaTranslator9Auth.Data;
-using Microsoft.AspNetCore.Authentication.Google;
+using AiQaTranslator9Auth.Models; // <-- единый ApplicationUser
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+// Razor Components
+builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
+// Identity helpers for components
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
-// Правильная конфигурация аутентификации
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultScheme = IdentityConstants.ApplicationScheme;
-    options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-})
-.AddGoogle(options =>  // Сначала добавляем Google аутентификацию
-{
-    options.ClientId = builder.Configuration["Authentication:Google:ClientId"];
-    options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
-})
-.AddIdentityCookies();  // Затем добавляем Identity cookies
-
-builder.Services.AddIdentityCore<ApplicationUser>(options =>
-{
-    options.SignIn.RequireConfirmedAccount = false; //  Измените на false
-});
-
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(connectionString));
+// DbContext (один файл БД рядом с проектом)
+var dbPath = Path.Combine(builder.Environment.ContentRootPath, "app.db");
+builder.Services.AddDbContext<ApplicationDbContext>(o => o.UseSqlite($"Data Source={dbPath}"));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+// Identity (один раз, один тип)
+builder.Services
+    .AddIdentityCore<ApplicationUser>(o =>
+    {
+        o.SignIn.RequireConfirmedAccount = false;
+    })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
+// Authentication + cookies + Google (всё через AuthenticationBuilder)
+var auth = builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = IdentityConstants.ApplicationScheme;
+    options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+});
+
+auth.AddGoogle(options =>
+{
+    options.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+    options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+    // options.CallbackPath = "/signin-google"; // если меняли
+});
+
+auth.AddIdentityCookies();
+
+// Email sender (обязательно тот же ApplicationUser)
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
@@ -62,13 +66,14 @@ else
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseRouting();
+
+app.UseAuthentication(); // обязательно
+app.UseAuthorization();  // обязательно
 app.UseAntiforgery();
 
 app.MapStaticAssets();
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
-
-// Add additional endpoints required by the Identity /Account Razor components.
+app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 app.MapAdditionalIdentityEndpoints();
 
 app.Run();
