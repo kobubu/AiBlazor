@@ -62,6 +62,14 @@ builder.Services.AddHttpClient<ITranslationQaApi, TranslationQaApi>((sp, http) =
     http.Timeout = TimeSpan.FromMinutes(2);
 });
 
+builder.Services.AddHttpClient<ITranslationApi, TranslationApi>((sp, http) =>
+{
+    var cfg = sp.GetRequiredService<IConfiguration>();
+    var baseUrl = cfg["Apis:AiQaMiniApi"] ?? "http://localhost:5134";
+    http.BaseAddress = new Uri(baseUrl);
+    http.Timeout = TimeSpan.FromMinutes(2);
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

@@ -11,6 +11,7 @@ builder.Services.AddHttpClient<IOllamaClient, OllamaClient>(http =>
     http.Timeout = TimeSpan.FromMinutes(2);
 });
 builder.Services.AddSingleton<ITranslationChecker, TranslationChecker>();
+builder.Services.AddSingleton<ITranslator, Translator>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -45,6 +46,25 @@ app.MapPost("/api/translate/check",
     })
     .DisableAntiforgery()            // JSON-API из другого сервера → антифорджери мешает
     .WithName("CheckTranslation")
+    .Produces<TranslationCheckResult>(200)
+    .Produces(400);
+
+app.MapPost("/api/translate",
+    async ([FromBody] TranslationRequest req, ITranslator translator, CancellationToken ct) => // <== [FromBody]
+    {
+        if (string.IsNullOrWhiteSpace(req.SourceLanguage) ||
+            string.IsNullOrWhiteSpace(req.SourceText) ||
+            string.IsNullOrWhiteSpace(req.TargetLanguage))
+            return Results.BadRequest(new { error = "sourceLanguage, sourceText, targetLanguage are required" });
+
+        if (req.SourceText.Length > 100_000)
+            return Results.BadRequest(new { error = "payload too large" });
+
+        var result = await translator.TranslateAsync(req, ct);
+        return Results.Ok(result);
+    })
+    .DisableAntiforgery()            // JSON-API из другого сервера → антифорджери мешает
+    .WithName("Translation")
     .Produces<TranslationCheckResult>(200)
     .Produces(400);
 

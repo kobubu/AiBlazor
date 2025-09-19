@@ -1,0 +1,91 @@
+@page "/translation"
+@rendermode InteractiveServer
+@inject AiQaTranslator9Auth.Services.ITranslationApi Api
+
+<h1>Machine translation</h1>
+
+<EditForm Model="form" OnValidSubmit="OnSubmitAsync" FormName="translation">
+    <DataAnnotationsValidator />
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="mb-2">
+                <label class="form-label">Source language</label>
+                <InputText class="form-control" @bind-Value="form.SourceLanguage" />
+            </div>
+            <div class="mb-2">
+                <label class="form-label">Source text</label>
+                <InputTextArea class="form-control" @bind-Value="form.SourceText" rows="10" />
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="mb-2">
+                <label class="form-label">Target language</label>
+                <InputText class="form-control" @bind-Value="form.TargetLanguage" />
+            </div>
+            <div class="mb-2">
+                <label class="form-label">Target text</label>
+                <InputTextArea class="form-control" @bind-Value="form.TargetText" rows="10" />
+            </div>
+        </div>
+    </div>
+    <div class="mt-3 d-flex gap-2 align-items-center">
+        <button class="btn btn-primary" type="submit" disabled="@isBusy">Translate</button>
+        @if (isBusy)
+        {
+            <span>Translating...</span>
+        }
+    </div>
+</EditForm>
+
+@if (result is not null && !result.IsOk)
+{
+    <div class="mt-4">
+        <div class="alert alert-warning">
+            <strong>Error occurred</strong>
+            <span class="ms-2">@result.Translation</span>
+        </div>
+    </div>
+}
+
+@code {
+    private RequestModel form = new();
+    private AiQaTranslator9Auth.Services.TranslationResult? result;
+    private bool isBusy;
+
+    private async Task OnSubmitAsync()
+    {
+        isBusy = true;
+        result = null;
+        try
+        {
+            result = await Api.TranslateAsync(new AiQaTranslator9Auth.Services.TranslationRequest
+                {
+                    SourceLanguage = (form.SourceLanguage ?? "").Trim(),
+                    SourceText = (form.SourceText ?? "").Trim(),
+                    TargetLanguage = (form.TargetLanguage ?? "").Trim()
+                });
+
+            // Заполняем поле TargetText полученным переводом
+            if (result.IsOk && !string.IsNullOrEmpty(result.Translation))
+            {
+                form.TargetText = result.Translation;
+            }
+        }
+        catch (Exception ex)
+        {
+            result = new AiQaTranslator9Auth.Services.TranslationResult { IsOk = false, Translation = ex.Message };
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private sealed class RequestModel
+    {
+        public string? SourceLanguage { get; set; } = "en";
+        public string? SourceText { get; set; }
+        public string? TargetLanguage { get; set; } = "ru";
+        public string? TargetText { get; set; } // Добавлено поле для перевода
+    }
+}
