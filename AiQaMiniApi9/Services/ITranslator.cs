@@ -11,7 +11,7 @@ public interface ITranslator
 public sealed class Translator(IOllamaClient llm, IConfiguration cfg) : ITranslator
 {
     //todo: поменять на Химеру
-    private readonly string _model = cfg["Ollama:Model"] ?? "Inlingo1:latest";
+    private readonly string _model = cfg["Ollama:TranslationModel"] ?? "hf.co/NikolayKozloff/Hunyuan-MT-Chimera-7B-Q8_0-GGUF:latest";
     private readonly float _temp = float.TryParse(cfg["Ollama:Temperature"], out var t) ? t : 0.25f;
 
     public async Task<TranslationResult> TranslateAsync(TranslationRequest r, CancellationToken ct = default)
