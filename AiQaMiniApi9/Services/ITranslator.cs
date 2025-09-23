@@ -32,7 +32,10 @@ public sealed class Translator(IOllamaClient llm, IConfiguration cfg) : ITransla
         sb.AppendLine();
         sb.AppendLine($"Target language: {r.TargetLanguage}");
         sb.AppendLine();
-        
+        sb.AppendLine("Context:");
+        if (r.Context is { Count: > 0 })
+            foreach (var kv in r.Context) sb.AppendLine($"{kv.Key}: {kv.Value}");
+
         return sb.ToString();
     }
 }
