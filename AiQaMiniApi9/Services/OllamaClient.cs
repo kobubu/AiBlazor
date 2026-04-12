@@ -8,7 +8,7 @@ public sealed class OllamaClient(HttpClient http) : IOllamaClient
     private sealed class OllamaRequest
     {
         // qwen3:32b, Inlingo1:latest
-        [JsonPropertyName("model")] public string Model { get; set; } = "Inlingo1:latest";
+        [JsonPropertyName("model")] public string Model { get; set; } = "Inlingo2:latest";
         [JsonPropertyName("prompt")] public string Prompt { get; set; } = "";
         [JsonPropertyName("stream")] public bool Stream { get; set; } = false;
         [JsonPropertyName("temperature")] public float Temperature { get; set; } = 0.25f;
